@@ -1,0 +1,128 @@
+using System.ComponentModel;
+using System.Diagnostics;
+
+public class procesos
+{
+    public string id_procesos {  get; set; }
+    public int rafaga { get; set; }
+    public string estado { get; set; }
+    public int tiempoCreacion{ get; set; }
+
+
+    
+} 
+
+class Program
+{
+    static void Main()
+    {
+        List<string> estados = new List<string> {"Nuevo","Listo","Ejecutando","En espera","Terminado"};
+
+        List<procesos> listaProcesos = new List<procesos>();
+
+        Console.WriteLine("Valor de Quamtum:");
+        int quantum = int.Parse(Console.ReadLine());
+
+        Console.WriteLine("Cuantos procesos se desea crear");
+        int crearprocesos = int.Parse(Console.ReadLine());
+
+        for (int i = 0; i < crearprocesos; i++)
+        {
+            Console.WriteLine($"-----------------------Proceso {i}--------------------------");
+
+            procesos proceso = new procesos();
+
+            Console.WriteLine("ID Proceso");
+            proceso.id_procesos = Console.ReadLine();
+
+            Console.WriteLine("Rafagas");
+            proceso.rafaga = int.Parse(Console.ReadLine());
+
+            Console.WriteLine("Tiempo de creacion");
+            proceso.tiempoCreacion = int.Parse(Console.ReadLine());
+
+            proceso.estado = estados[0];
+
+            listaProcesos.Add(proceso);
+
+            
+        }
+
+        Console.WriteLine("-----------------------Procesos terminados--------------------------");
+        Console.WriteLine("-----------------------Lista de procesos--------------------------");
+
+        
+        foreach (procesos e in listaProcesos)
+        {
+            Console.WriteLine(e.id_procesos);
+        }
+
+        List<procesos> listaOrdenadaDeProcesos = listaProcesos.OrderBy(x => x.tiempoCreacion).ToList();
+        
+        
+
+        Queue<procesos> colaListo = new Queue<procesos>();
+
+        int clock = 0;
+        int quantumActual = 0;
+
+        procesos procesoActivo = null;
+
+        while(listaOrdenadaDeProcesos.Count > 0 || colaListo.Count > 0 || procesoActivo != null)
+{
+    Console.WriteLine($"---------------------Tick {clock}---------------------");
+
+    
+    for (int i = listaOrdenadaDeProcesos.Count - 1; i >= 0; i--) {
+        if (listaOrdenadaDeProcesos[i].tiempoCreacion == clock)
+        {
+            listaOrdenadaDeProcesos[i].estado = estados[1]; // Listo
+            colaListo.Enqueue(listaOrdenadaDeProcesos[i]);
+            Console.WriteLine($"{listaOrdenadaDeProcesos[i].id_procesos} entro a la cola de listos.");
+            listaOrdenadaDeProcesos.RemoveAt(i);
+        }
+    }
+
+    
+    if(procesoActivo == null && colaListo.Count > 0)
+    {
+        procesoActivo = colaListo.Dequeue();
+        procesoActivo.estado = estados[2]; // Ejecutando
+        quantumActual = 0;
+        Console.WriteLine($"{procesoActivo.id_procesos} esta ejecutandose.");
+    }
+
+    
+    if(procesoActivo != null)
+    {
+        procesoActivo.rafaga -= 1;
+        quantumActual++;
+        Console.WriteLine($"{procesoActivo.id_procesos}: Ráfaga restante: {procesoActivo.rafaga} Quantum: {quantumActual}/{quantum}");
+
+        if(procesoActivo.rafaga == 0)
+        {
+            procesoActivo.estado = estados[4]; // Terminado
+            Console.WriteLine($"{procesoActivo.id_procesos} ha finalizado.");
+            procesoActivo = null; 
+        }
+        else if(quantumActual == quantum)
+        {
+            procesoActivo.estado = estados[1]; // Vuelve a Listo
+            Console.WriteLine($"{procesoActivo.id_procesos} vuelve al final de la cola (Fin de Quantum).");
+            
+            
+            colaListo.Enqueue(procesoActivo); 
+            procesoActivo = null;
+        }
+    }
+    else
+    {
+        Console.WriteLine("No hay procesos listos en este momento (CPU Inactivo)");
+    }
+
+    clock++;
+    System.Threading.Thread.Sleep(600);
+}
+        Console.WriteLine("Termino");
+    }
+}
